@@ -56,3 +56,4 @@ def capital_prediction(data: schemas.CapitalInput,
     """ predict capital based on year""" 
     return predict_capital(data)
         
+        

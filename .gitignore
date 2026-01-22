@@ -207,4 +207,19 @@ marimo/_lsp/
 __marimo__/
 
 # Ignore ML model files
-app/income_model.pkl.gz
+app/Income_model.pkl.gz
+models/*/Income_model.pkl.gz
+
+# Ignore log files
+app.log
+deployment.log
+
+# Ignore OS and IDE files
+.DS_Store
+*.swp
+*.swo
+*~
+.idea/
+.vscode/
+*.sublime-project
+*.sublime-workspace

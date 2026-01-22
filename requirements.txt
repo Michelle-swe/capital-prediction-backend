@@ -236,3 +236,8 @@ webcolors==25.10.0
 webencodings==0.5.1
 websocket-client==1.9.0
 widgetsnbextension==4.0.15
+pytest==7.4.3
+pytest-cov==4.1.0
+httpx==0.25.0
+python-jose[cryptography]==3.3.0
+passlib[bcrypt]==1.7.4

@@ -1,0 +1,113 @@
+name: Deploy ML Model
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'ml/**'
+      - 'app/**'
+      - 'requirements.txt'
+      - 'Dockerfile'
+      - 'docker-compose.yml'
+      - '.github/workflows/**'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    name: Test
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+          cache: 'pip'
+      
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest pytest-cov
+
+      - name: Run unit tests
+        run: |
+          pytest tests/ -v --tb=short
+      
+      - name: Upload coverage
+        uses: codecov/codecov-action@v3
+        with:
+          files: ./coverage.xml
+          fail_ci_if_error: false
+
+  build:
+    needs: test
+    runs-on: ubuntu-latest
+    name: Build Docker Image
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+      
+      - name: Build Docker image
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          push: false
+          tags: income-prediction-api:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  security:
+    runs-on: ubuntu-latest
+    name: Security Scan
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+      
+      - name: Upload Trivy results
+        uses: github/codeql-action/upload-sarif@v2
+        if: always()
+        with:
+          sarif_file: 'trivy-results.sarif'
+
+  deploy:
+    needs: [test, build, security]
+    runs-on: ubuntu-latest
+    name: Deploy to Production
+    if: success()
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Deploy with Docker Compose
+        run: |
+          docker-compose down || true
+          docker-compose up -d --build
+      
+      - name: Health check
+        run: |
+          sleep 10
+          curl -f http://localhost:8000/api/health || exit 1
+      
+      - name: Run smoke tests
+        run: |
+          curl -f http://localhost:8000/docs || exit 1
+          curl -X POST http://localhost:8000/api/predict/income \
+            -H "Content-Type: application/json" \
+            -d '{"year": 2024}' || exit 1
+      
+      - name: Log deployment
+        if: success()
+        run: echo "Deployment successful at $(date)" >> deployment.log
