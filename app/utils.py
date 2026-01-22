@@ -113,7 +113,7 @@ def predict_capital(data):
         features = np.array([[data.year]]) 
         capital = model.predict(features)[0]
         capital= max(0, capital) # Ensure non-negative price
-        return {"capital": float(capital)} 
+        return {"predicted_income": float(capital)} 
     except Exception as e:
         raise HTTPException(
             status_code=500,

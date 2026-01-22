@@ -34,4 +34,4 @@ class CapitalInput(BaseModel):
     year: int = Field(..., ge=1900, le=2100, description="Year for predicting per capital income")
 
 class CapitalResponse(BaseModel):
-    predicted_income: float = Field(..., description="Predicted per capital income")
+    predicted_income: float
